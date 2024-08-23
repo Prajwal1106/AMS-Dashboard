@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Existing styles */
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 0.5rem;
+        }
+
+        .tabs button {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            transition: 0.3s;
+            border-radius: 4px;
+        }
+
+        .tabs button:hover {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .tabs button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #ccc;
+            margin-top: -1px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .content-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .content-col {
+            width: 48%;
+        }
+
+        .footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+            width: 100%;
+            bottom: 0;
+        }
+
+        /* Hexagon Style */
+        .honeycomb-wrapper {
+            border: 2px solid gray; /* Gray border */
+            padding: 10px; /* Space between border and honeycomb */
+            border-radius: 8px; /* Rounded corners for a nicer look */
+            background-color: white; /* Background color inside the box */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional shadow for some depth */
+            margin: 0 auto; /* Center the box */
+            max-width: 1000px; /* Optional: limit the width of the box */
+        }
+
+        .honeycomb-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            padding: 10px;
+        }
+
+        .hexagon {
+            width: 100px;
+            height: 100px;
+            background-color: lightgrey;
+            margin: 5px;
+            position: relative;
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform: rotate(90deg); /* Rotate hexagon */
+        }
+
+        .hexagon-inner {
+            transform: rotate(-90deg); /* Counteract rotation for text */
+            color: black;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .hexagon:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            z-index: -1;
+            clip-path: inherit;
+        }
+
+        /* Status based colors */
+        .hexagon[data-status="Available"] {
+            background-color: green;
+        }
+
+        .hexagon[data-status="Offline"] {
+            background-color: lightgrey;
+        }
+
+        .hexagon[data-status="Partially Running"] {
+            background-color: orange;
+        }
+
+        .hexagon[data-status="Not Functional"] {
+            background-color: yellow;
+        }
+
+        .hexagon[data-status="Error"] {
+            background-color: red;
+        }
+
+        /* Status legend styles */
+        .status-legend {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+
+        .status-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        .status-text {
+            font-weight: bold;
+        }
+        .container {
+            width: 90%;
+            margin: 20px auto;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 90%; /* Adjust width to fit container */
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            table-layout: fixed; /* Ensure fixed layout to handle overflow */
+            height: 200px; /* Reduced fixed height for table */
+            overflow: hidden; /* Hide overflow */
+        }
+
+        thead th {
+            background-color: #f2f2f2;
+            position: sticky; /* Stick header to the top */
+            top: 0;
+        }
+
+        tbody tr {
+            height: 30px; /* Reduced row height */
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 2px; /* Reduced padding */
+            text-align: center;
+            vertical-align: middle; /* Center content vertically */
+        }
+
+        .bar-container {
+            position: relative;
+            height: 4px; /* Reduced height for the bar container */
+            background-color: #f4f4f4;
+            border-radius: 5px;
+        }
+
+        .bar {
+            height: 150%;
+            background-color: darkblue;
+            border-radius: 0px;
+        }
+
+        .percentage {
+            position: absolute;
+            top: -12px; /* Adjusted position for percentage text */
+            left: 0;
+            right: 0;
+            font-weight: bold;
+            font-size: 10px; /* Reduced font size for percentage */
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 40px; /* Reduced height for the chart */
+        }
+
+        canvas {
+            width: 100% !important; /* Ensure canvas fills container */
+            height: 100% !important; /* Ensure canvas fills container */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Azure Monitor for SAP Solution</h1>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-link active" onclick="openTab(event, 'overview')">Overview</button>
+        <button class="tab-link" onclick="openTab(event, 'availability')">Availability</button>
+    </div>
+
+    <div id="overview" class="tab-content active">
+        <h2>Overview</h2>
+        <div class="content-row">
+            <div class="content-col" id="overview-left">
+                <!-- Hexagons will be displayed here -->
+                <h3>Availability Status by SID</h3>
+                <div class="honeycomb-wrapper">
+                    <div class="honeycomb-container" id="honeycomb">
+                        <!-- Hexagons will be dynamically inserted here -->
+                    </div>
+                    <!-- Status Legend -->
+                    <div class="status-legend">
+                        <div class="status-item">
+                            <div class="status-color" style="background-color: green;"></div>
+                            <div class="status-text">Available</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-color" style="background-color: orange;"></div>
+                            <div class="status-text">Partially Running</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-color" style="background-color: yellow;"></div>
+                            <div class="status-text">Not Functional</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-color" style="background-color: red;"></div>
+                            <div class="status-text">Error</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-color" style="background-color: lightgrey;"></div>
+                            <div class="status-text">Offline</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="content-col" id="overview-right">
+                <!-- Second item will be displayed here -->
+                <div class="container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>SAP System</th>
+                                <th>Availability Over 30 Minutes</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-body">
+                            <!-- Table rows will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="availability" class="tab-content">
+        <h2>Availability</h2>
+        <p id="availability-content">
+            <!-- Third item will be displayed here -->
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>MCLDashboard © 2024</p>
+    </div>
+
+    <script>
+        //Generate table rows
+        function generateTableRows(data) {
+            return data.map(item => {
+                const trendData = JSON.parse(item.availabilityTrend);
+                return `
+                    <tr>
+                        <td>${item.SID_s}</td>
+                        <td>
+                            <div class="bar-container">
+                                <div class="percentage">${item.availability}%</div>
+                                <div class="bar" style="width: ${item.availability}%"></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="chart-container">
+                                <canvas id="chart-${item.SID_s}"></canvas>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        // Function to open the tab
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            const tabLinks = document.getElementsByClassName("tab-link");
+
+            // Hide all tab contents
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].style.display = "none";
+            }
+
+            // Remove active class from all tab links
+            for (let i = 0; i < tabLinks.length; i++) {
+                tabLinks[i].classList.remove("active");
+            }
+
+            // Show the clicked tab and add active class to the link
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.classList.add("active");
+        }
+
+        // Function to make the POST request and update the UI
+        function fetchData() {
+            fetch('https://prod-104.westeurope.logic.azure.com:443/workflows/fdf1006f9ec3422fa1efa22488ef0519/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=r3HljkT0Uig0zPa858Z_ItxV57gD4PCvu5vy4rBASOU', {  // Replace 'YOUR_API_ENDPOINT' with the actual API URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    // You can add any data needed for the POST request here
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (Array.isArray(data) && data.length === 3) {
+                    // Display hexagons for the first item in the overview-left section
+                    const firstItem = data[0];
+                    const honeycomb = document.getElementById('honeycomb');
+                    honeycomb.innerHTML = '';  // Clear previous hexagons
+
+                    firstItem.forEach(item => {
+                        const hexagon = document.createElement('div');
+                        hexagon.className = 'hexagon';
+                        hexagon.dataset.status = item.Status;  // Set status for color
+
+                        // Create an inner div to contain the text
+                        const hexagonInner = document.createElement('div');
+                        hexagonInner.className = 'hexagon-inner';
+                        hexagonInner.textContent = item.SID_s;  // Set SID_s value inside hexagon
+
+                        hexagon.appendChild(hexagonInner);
+                        honeycomb.appendChild(hexagon);
+                    });
+
+                    // Display second object as a string in the overview-right section
+                    const SecondItem = data[1];
+                    document.getElementById('data-body').innerHTML = generateTableRows(SecondItem);
+                    SecondItem.forEach(item => {
+                        const trendData = JSON.parse(item.availabilityTrend);
+                        const ctx = document.getElementById(`chart-${item.SID_s}`).getContext('2d');
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: Array.from({length: trendData.length}, (_, i) => i + 1),
+                                datasets: [{
+                                    label: 'Availability Trend',
+                                    data: trendData,
+                                    borderColor: 'green',
+                                    backgroundColor: 'lightgreen',
+                                    borderWidth: 2,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false, // Allow the chart to resize
+                                plugins: {
+                                    legend: {
+                                        display: false // Hide the legend (which contains labels)
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        display: false
+                                    },
+                                   y: {
+                                        beginAtZero: true,
+                                        max: 100,
+                                        ticks: {
+                                            display: false
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    });
+                    // Display the third object in the Availability section
+                    document.getElementById('availability-content').textContent = JSON.stringify(data[2]);
+                } else {
+                    console.error('Unexpected response format', data);
+                }
+            })
+            .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Trigger the POST request when the page loads
+        window.onload = function() {
+            fetchData();
+        };
+    </script>
+
+</body>
+</html>
